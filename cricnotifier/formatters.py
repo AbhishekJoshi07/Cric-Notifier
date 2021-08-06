@@ -2,7 +2,7 @@
 # Message formatters
 ########################################################################
 
-from utils import string_formater
+from utils import string_formater, century_calculator
 
 class MessageFactory:
 
@@ -56,9 +56,7 @@ __________________________________
         return msg
 
     def create_5wickets_msg(self, bowler_name):
-        msg_template = """
-
-🥳  <b>5 wicket haul :-</b>
+        msg_template = """🥳  <b>5 Wicket haul :-</b>
         
 {bowler} got 5 wickets !!!
 
@@ -72,7 +70,7 @@ __________________________________
         return msg
 
     def create_player_score_msg(self, match_info):
-        msg_template = """🥳  <b>{prefix} Century !!!</b>
+        msg_template = """🥳  <b>{century_data} !!!</b>
 
 {batsman}:   {batssmanrun}{ballfaced}
 4️s: {fours}     6️s: {sixes}
@@ -81,12 +79,24 @@ __________________________________
 """
 
         msg = msg_template.format(
-            prefix = '' if match_info.batsmanrun >= 100 else 'Half',
+            century_data = century_calculator(match_info.batsmanrun),
             batsman = string_formater(match_info.batsman),
             batssmanrun = match_info.batsmanrun,
             ballfaced = match_info.batsman_ballsfaced,
             fours = match_info.batsaman_fours,
             sixes = match_info.batsaman_sixes
         )
+
+        return msg
+
+    def create_match_update_msg(self, update):
+        msg_template = """📢  <b>Update :-</b>
+        
+{update}
+
+__________________________________
+"""
+
+        msg = msg_template.format(update = update)
 
         return msg

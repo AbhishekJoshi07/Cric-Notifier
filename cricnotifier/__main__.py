@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """cricnotifier - cricket live match score moniting for telegram channels."""
 import time
 import shelve
@@ -24,7 +25,7 @@ SCORE_INTERVAL_COUNT = 0
               help='Score interval in minutes. To send live score notification intervally.'
                    ' Reads SCORE_INTERVAL env var.',
               envvar='SCORE_INTERVAL',
-              default=15)
+              default=2)
 @click.option('--bot-token',
               help='Telegram bot token. The bot must be admin on the channel.'
                    ' Reads TELEGRAM_BOT_TOKEN env var.',
@@ -108,12 +109,14 @@ class MatchMonitor(object):
             self.send_once(msg, match_info.bowler + '5 wicket hual')
 
         if match_info.batsmanrun >= 50:
+            # for msg_id -> convert 155 to 150, 99 to 50 so on...
+            century_floor = str(int(match_info.batsmanrun / 50) * 50)
             msg = self.msg_factory.create_player_score_msg(match_info)
-            self.send_once(msg, match_info.batsman + '50 runs')
+            self.send_once(msg, match_info.batsman + century_floor)
 
-        if match_info.batsmanrun >= 100:
-            msg = self.msg_factory.create_player_score_msg(match_info)
-            self.send_once(msg, match_info.batsman + '100 runs')
+        if match_info.match_update:
+            msg = self.msg_factory.create_match_update_msg(match_info.match_update)
+            self.send_once(msg, match_info.match_update)
 
     def is_msg_sent(self, msg_id):
         return self.db[self.match_url].get(msg_id, False)

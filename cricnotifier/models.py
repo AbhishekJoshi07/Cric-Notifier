@@ -3,6 +3,7 @@
 ########################################################################
 
 DATA_NOT_FOUND = 'Data Not Found'
+VALID_UPDATES_WORDS = ['break', 'rain', 'stop', 'stumps', 'lunch', 'toss', 'dinner', 'tea', 'win', 'won', 'loss', 'opt', 'choose']
 
 class MatchInfo(object):
     def __init__(self, matchdata):
@@ -91,3 +92,12 @@ class MatchInfo(object):
             return int(self.data['livescore']['bowlerwickets'])
         
         return 0
+
+    @property
+    def match_update(self):
+        if self.data['livescore'] and self.data['livescore']['update']:
+            for i in range(len(VALID_UPDATES_WORDS)):
+                if VALID_UPDATES_WORDS[i] in self.data['livescore']['update'].lower():                    
+                    return self.data['livescore']['update']
+        
+        return ''
