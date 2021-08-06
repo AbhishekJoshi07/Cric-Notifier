@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """cricnotifier - cricket live match score moniting for telegram channels."""
 import time
 import shelve
@@ -13,8 +12,6 @@ from notifiers import TelegramNotifier
 from utils import SimpleKVDB
 
 POLL_INTERVAL = 60
-SCORE_INTERVAL = 15  # in minutes
-SCORE_INTERVAL_COUNT = 0
 
 @click.command()
 @click.option('--match-url',
@@ -25,7 +22,7 @@ SCORE_INTERVAL_COUNT = 0
               help='Score interval in minutes. To send live score notification intervally.'
                    ' Reads SCORE_INTERVAL env var.',
               envvar='SCORE_INTERVAL',
-              default=2)
+              default=40)
 @click.option('--bot-token',
               help='Telegram bot token. The bot must be admin on the channel.'
                    ' Reads TELEGRAM_BOT_TOKEN env var.',
