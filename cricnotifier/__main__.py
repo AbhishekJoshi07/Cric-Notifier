@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """cricnotifier - cricket live match score moniting for telegram channels."""
 import time
 import shelve
@@ -13,13 +12,19 @@ from notifiers import TelegramNotifier
 from utils import SimpleKVDB
 
 POLL_INTERVAL = 60
-
+SCORE_INTERVAL = 15  # in minutes
+SCORE_INTERVAL_COUNT = 0
 
 @click.command()
 @click.option('--match-url',
-              help='cricbuzz url of the cricket match. Reads MATCH_URL env var.',
+              help='Cricbuzz url of the cricket match. Reads MATCH_URL env var.',
               envvar='CRIC_MATCH_URL',
               prompt=True)
+@click.option('--score-interval',
+              help='Score interval in minutes. To send live score notification intervally.'
+                   ' Reads SCORE_INTERVAL env var.',
+              envvar='SCORE_INTERVAL',
+              default=15)
 @click.option('--bot-token',
               help='Telegram bot token. The bot must be admin on the channel.'
                    ' Reads TELEGRAM_BOT_TOKEN env var.',
@@ -42,7 +47,7 @@ POLL_INTERVAL = 60
               help="Set the logging level")
 
 
-def main(match_url, bot_token, chat_id, matchlog, loglevel):
+def main(match_url, bot_token, score_interval, chat_id, matchlog, loglevel):
     """Publish cricket live score events to a telegram channel."""
     if loglevel:
         logging.basicConfig(level=loglevel)
@@ -54,7 +59,7 @@ def main(match_url, bot_token, chat_id, matchlog, loglevel):
         dbwrapper = SimpleKVDB(db)
         if match_url not in dbwrapper:
                 dbwrapper[match_url] = {}
-        monitor = MatchMonitor(dbwrapper, cric_api, notifier, match_url)
+        monitor = MatchMonitor(dbwrapper, cric_api, notifier, match_url, score_interval)
         try:            
             monitor.start()
         finally:
@@ -66,7 +71,7 @@ def main(match_url, bot_token, chat_id, matchlog, loglevel):
 ########################################################################
 
 class MatchMonitor(object):
-    def __init__(self, db, api, notifier, match_url):
+    def __init__(self, db, api, notifier, match_url, score_interval):
         """Scan matchlog for match updates.
 
         This is the top most class that puts everything together.
@@ -83,11 +88,32 @@ class MatchMonitor(object):
         self.notifier = notifier
         self.match_url = match_url
         self.msg_factory = MessageFactory()
+        self.live_score_interval_count = 0
+        self.score_interval = score_interval
 
     def update(self, match_info):
+        self.live_score_interval_count += 1
+
         if match_info.last_wicket:
-            msg = self.msg_factory.create_preparation_msg(match_info.last_wicket)
+            msg = self.msg_factory.create_wicket_msg(match_info.last_wicket)
             self.send_once(msg, match_info.last_wicket)
+
+        if self.score_interval == self.live_score_interval_count and match_info.live_score:
+            self.live_score_interval_count = 0
+            msg = self.msg_factory.create_live_score_msg(match_info)
+            self.send_once(msg, match_info.live_score)
+
+        if match_info.bowlerwickets >= 5:
+            msg = self.msg_factory.create_5wickets_msg(match_info.bowler)
+            self.send_once(msg, match_info.bowler + '5 wicket hual')
+
+        if match_info.batsmanrun >= 50:
+            msg = self.msg_factory.create_player_score_msg(match_info)
+            self.send_once(msg, match_info.batsman + '50 runs')
+
+        if match_info.batsmanrun >= 100:
+            msg = self.msg_factory.create_player_score_msg(match_info)
+            self.send_once(msg, match_info.batsman + '100 runs')
 
     def is_msg_sent(self, msg_id):
         return self.db[self.match_url].get(msg_id, False)
