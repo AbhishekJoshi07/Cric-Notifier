@@ -94,12 +94,7 @@ class MatchMonitor(object):
 
         if match_info.last_wicket:
             msg = self.msg_factory.create_wicket_msg(match_info.last_wicket)
-            self.send_once(msg, match_info.last_wicket)
-
-        if self.score_interval == self.live_score_interval_count and match_info.live_score:
-            self.live_score_interval_count = 0
-            msg = self.msg_factory.create_live_score_msg(match_info)
-            self.send_once(msg, match_info.live_score)
+            self.send_once(msg, match_info.last_wicket)            
 
         if match_info.bowlerwickets >= 5:
             msg = self.msg_factory.create_5wickets_msg(match_info.bowler)
@@ -112,8 +107,20 @@ class MatchMonitor(object):
             self.send_once(msg, match_info.batsman + century_floor)
 
         if match_info.match_update:
+            self.live_score_interval_count = self.score_interval
+            self.send_live_score_msg(match_info)
+
             msg = self.msg_factory.create_match_update_msg(match_info.match_update)
             self.send_once(msg, match_info.match_update)
+
+        else:
+            self.send_live_score_msg(match_info)
+
+    def send_live_score_msg(self, match_info):
+        if self.score_interval == self.live_score_interval_count and match_info.live_score:
+            self.live_score_interval_count = 0
+            msg = self.msg_factory.create_live_score_msg(match_info)
+            self.send_once(msg, match_info.live_score)
 
     def is_msg_sent(self, msg_id):
         return self.db[self.match_url].get(msg_id, False)

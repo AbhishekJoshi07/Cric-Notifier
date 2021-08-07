@@ -74,8 +74,12 @@ class MatchInfo(object):
 
     @property
     def recentballs(self):
-        if self.data['livescore'] and '|' in self.data['livescore']['recentballs']:
-            return self.data['livescore']['recentballs']
+        if self.data['livescore']:
+            if '|' in self.data['livescore']['recentballs']:
+                return self.data['livescore']['recentballs']
+
+            elif '|' in self.data['livescore']['lastwicket']:
+                return self.data['livescore']['lastwicket']
         
         return ''
 
