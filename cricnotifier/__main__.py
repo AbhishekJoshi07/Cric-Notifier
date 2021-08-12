@@ -123,11 +123,11 @@ class MatchMonitor(object):
             self.send_once(msg, match_info.live_score)
 
     def is_msg_sent(self, msg_id):
-        return self.db[self.match_url].get(msg_id, False)
+        return self.db[self.match_url].get(msg_id.lower(), False)
 
     def mark_msg_as_sent(self, msg_id):
         tmp = self.db[self.match_url]
-        tmp[msg_id] = True
+        tmp[msg_id.lower()] = True
         self.db[self.match_url] = tmp
 
     def send_once(self, msg, msg_id=None):
